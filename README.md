@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ## Authors
 
 * **Lingyu Ma** - *Main contributor* - [Github](https://github.com/LingyuMa/)
-* **Zeshi Luo** - *Main contributor* - [Github](https://TOBEADDED)
+* **Zeshi Luo** - *Main contributor* - [Github](https://github.com/ayu1991house/)
 
 ## License
 This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details
