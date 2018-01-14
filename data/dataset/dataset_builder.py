@@ -32,6 +32,7 @@ class DatasetsCoordinator:
             self.valid_images_list = utils.get_images_list(params['valid_images_path'])
 
     def build_datasets(self):
+        self.initial_check()
         makedirs(self.ds_path, exist_ok=True)
         train_label = Label(params['train_label_path'], params['project_type'])
         valid_label = Label(params['valid_label_path'], params['project_type'])
@@ -95,7 +96,7 @@ class Dataset:
             raise NotImplementedError('object segmentation not implemented')
 
         # write to hdf5 file
-        for idx, image in enumerate(utils.image_loader(self.img_base_dir , self.img_list, width, height,
+        for idx, image in enumerate(utils.image_loader(self.img_base_dir, self.img_list, width, height, depth,
                                                        params['normalization_flag'], params['histo_equalization'])):
             # increase dataset if necessary
             if idx + 1 > capacity:
@@ -107,7 +108,7 @@ class Dataset:
                 label_ds.resize((capacity, label_size))
             img_ds[idx] = image
             label_ds[idx] = self.label.get(self.img_list[idx])
-            print("write to dataset {}: {}/{}".format(self.name, idx + 1, len(self.images_list)))
+            print("write to dataset {}: {}/{}".format(self.name, idx + 1, len(self.img_list)))
 
         f_handle.close()
 
@@ -121,5 +122,16 @@ class Dataset:
         y = self.f_handle['labels']['y'][pos: pos+batch_size]
         return x, y
 
-ds = Dataset()
-ds.build_datasets()
+
+if __name__ == "__main__":
+    import numpy as np
+    import matplotlib.pyplot as plt
+    ds = DatasetsCoordinator()
+    ds.build_datasets()
+    ds.load_datasets()
+    img_batch, label_batch = ds.train_ds.read(1, 10)
+    print(img_batch[0].shape)
+    plt.imshow((img_batch[7, :, :, :] * 255).astype(np.uint8).squeeze())
+    print(label_batch[7])
+    plt.show()
+
