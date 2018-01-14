@@ -7,9 +7,18 @@ params['project_type'] = ProjectType.classification
 
 
 # pre-processing of input image (offline)
-params['data_path'] = '/something'
+params['train_images_path'] = '/home/lingyu/Documents/images'
+params['valid_images_path'] = '/home/lingyu/Documents/images'
+params['train_label_path'] = '/home/lingyu/Documents/images/labels.csv'
+params['valid_label_path'] = '/home/lingyu/Documents/images/labels.csv'
+params['hdf5_path'] = '/home/lingyu/Documents/images/datasets'
+
 params['input_image_width'] = 64
 params['input_image_height'] = 64
+params['input_image_type'] = ImageType.rgb
+params['label_size'] = 10
+
+params['train_val_separation'] = 0.9
 params['normalization_flag'] = Normalization.positive
 params['histo_equalization'] = False
 
