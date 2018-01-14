@@ -23,9 +23,9 @@ params['normalization_flag'] = Normalization.positive
 params['histo_equalization'] = False
 
 # data-augmentation (online)
-params['augmentation_rotation'] = RotationType.limit_90
+params['augmentation_rotation'] = RotationType.none
 params['augmentation_flip'] = FlipType.combined
-params['augmentation_shift'] = ShiftType.combined
+params['augmentation_shift'] = ShiftType.none
 params['pad_mode'] = 'symmetric'
 params['shift_ratio'] = 0.2
 params['augmentation_noise_model'] = NoiseType.poisson_noise
@@ -43,7 +43,7 @@ params['initial_learning_rate'] = 1e-5
 params['leaning_rate_decay'] = 0.5
 params['decay_iterations'] = 10
 params['l2_regularization'] = 1e-3
-params['batch_size'] = 64
+params['batch_size'] = 32
 params['n_epochs'] = 50
 
 params['train_log_frequency'] = 10

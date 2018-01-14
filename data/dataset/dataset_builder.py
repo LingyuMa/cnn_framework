@@ -122,6 +122,9 @@ class Dataset:
         y = self.f_handle['labels']['y'][pos: pos+batch_size]
         return x, y
 
+    def __len__(self):
+        return len(self.f_handle['labels']['y'])
+
 
 if __name__ == "__main__":
     import numpy as np
