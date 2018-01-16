@@ -7,7 +7,15 @@ from data.dataset.dataset_builder import DatasetsCoordinator
 from params import *  # act as global variables
 from typedef import *
 
+import os.path
+import os
+import sys
+from config.queuefile import queue_files
 
+
+print('The para is  {}'.format(sys.argv[0]))
+#para = int(sys.argv[1])
+config_load = queue_files(5)
 def _augment_flip(in_images, flip_type = FlipType.combined):
     for i in range(len(in_images)):
         if flip_type == FlipType.combined or flip_type == FlipType.left_right:
@@ -48,6 +56,8 @@ def _augment_noise(in_images, noise_type = NoiseType.gaussian_noise, std = 1.):
 class DataProvider:
     def __init__(self):
         self.datasets = DatasetsCoordinator()
+        if not os.path.exists(params['hdf5_path']):
+            self.datasets.build_datasets()
         self.datasets.load_datasets()
 
     def training_generator(self):
@@ -64,13 +74,14 @@ class DataProvider:
             if idx + batch_size >= size:
                 continue
             images, label = self.datasets.train_ds.read(idx, batch_size)
-            if params['augmentation_flip'] != FlipType.none:
+            if config_load["params"][6]['augmentation_flip'] != FlipType.none:
+                #params['augmentation_flip']
                 images = _augment_flip(images, params['augmentation_flip'])
             if params['augmentation_rotation'] != RotationType.none:
                 images = _augment_rotate(images, params['augmentation_rotation'], params['pad_mode'])
             if params['augmentation_shift'] != ShiftType.none:
                 images = _augment_shift(images, params['augmentation_shift'])
-            yield images, label
+            return images, label
 
     def validation_generator(self):
         batch_size = params['batch_size']
@@ -79,7 +90,7 @@ class DataProvider:
         for i in batch_size * np.arange(totol_num):
             if i + batch_size >= size:
                 break
-            yield self.datasets.valid_ds.read(i, batch_size)
+            return self.datasets.valid_ds.read(i, batch_size)
 
 
 if __name__ == "__main__":
@@ -90,8 +101,10 @@ if __name__ == "__main__":
 
     start_time = time.time()
     for images, label in nterable.training_generator():
-        plt.imshow((images[5, :, :, :] * 255).astype(np.uint8).squeeze())
-        plt.show()
-        break
+        #plt.imshow((images[0, :, :, :] * 255).astype(np.uint8).squeeze())
+        #plt.show()
+        #break
+        pass
     elapsed_time = time.time() - start_time
     print(elapsed_time)
+

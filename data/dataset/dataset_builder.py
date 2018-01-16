@@ -1,13 +1,24 @@
 from os.path import join, isfile
 from os import makedirs
-
+import os
 import h5py
 import random
 
+CURRENT_PATH = os.path.dirname(__file__)
+print('The CURRENT_PATH is  {}'.format(CURRENT_PATH))
 import data.dataset.preprocessing as utils
 from data.dataset.label_reader import Label
 from params import *  # act as global variables
 from typedef import *
+
+import os
+import sys
+from config.queuefile import queue_files
+
+
+print('The para is  {}'.format(sys.argv[0]))
+#para = int(sys.argv[1])
+config_load = queue_files(5)
 
 
 class DatasetsCoordinator:
@@ -61,7 +72,7 @@ class Dataset:
         # create hdf5 file handle
         f_handle = h5py.File(self.path, 'w')
         # get parameters
-        width = params['input_image_width']
+        width = config_load["params"][1]['input_image_width']
         height = params['input_image_height']
         if params['input_image_type'] == ImageType.rgb:
             depth = 3
@@ -131,10 +142,10 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     ds = DatasetsCoordinator()
     ds.build_datasets()
-    ds.load_datasets()
-    img_batch, label_batch = ds.train_ds.read(1, 10)
-    print(img_batch[0].shape)
-    plt.imshow((img_batch[7, :, :, :] * 255).astype(np.uint8).squeeze())
-    print(label_batch[7])
-    plt.show()
+#    ds.load_datasets()
+#    img_batch, label_batch = ds.train_ds.read(1, 10)
+#    print(img_batch[0].shape)
+#    plt.imshow((img_batch[7, :, :, :] * 255).astype(np.uint8).squeeze())
+#    print(label_batch[7])
+#    plt.show()
 

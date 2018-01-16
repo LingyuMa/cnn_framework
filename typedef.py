@@ -47,3 +47,7 @@ class NoiseType:
     poisson_noise = 1
     speckle_noise = 2
     none = 3
+
+class Optimizer:
+    Adam = 0
+    SGD = 1
