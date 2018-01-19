@@ -123,7 +123,7 @@ class Resnet:
         logits = tf.cast(logits, tf.float32)
         labels = tf.cast(labels, tf.float32)
 
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits (labels=labels, logits=logits)
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
         reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         total_loss = tf.add_n([cross_entropy_mean] + reg_loss)
