@@ -4,7 +4,7 @@ from models.tf_tools.utils import create_variables, activation_summary
 
 
 class Resnet:
-    def __init__(self, label_size = 102, layer_num=1, l2_reg=0.):
+    def __init__(self, label_size=102, layer_num=1, l2_reg=0.):
         self.label_size = label_size
         self.layer_num = layer_num
         self.l2_reg = l2_reg
@@ -123,7 +123,7 @@ class Resnet:
         logits = tf.cast(logits, tf.float32)
         labels = tf.cast(labels, tf.float32)
 
-        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits (labels=labels, logits=logits)
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
         reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         total_loss = tf.add_n([cross_entropy_mean] + reg_loss)

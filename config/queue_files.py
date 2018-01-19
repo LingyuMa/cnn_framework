@@ -13,9 +13,10 @@ def queue_files(setting_folders):
         config_path = join(setting_folders, json_name)
         with open(config_path, 'r') as f:
             params = json.load(f)
-            print('The input_image_height is  {}'.format(params['input_image_height']))
-            print('The value of input_image_height is  {}'.format(params['input_image_height']))
-            print('The twice value of input_image_height is  {}'.format(2*params['input_image_height']))
+            # print('The input_image_height is  {}'.format(params['input_image_height']))
+            # print('The value of input_image_height is  {}'.format(params['input_image_height']))
+            # print('The twice value of input_image_height is  {}'.format(2*params['input_image_height']))
+            yield params
 
 
 if __name__ == "__main__":

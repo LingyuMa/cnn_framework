@@ -45,15 +45,18 @@ def config(output_folder):
         configuration['log_path'] = '/home/lingyu/test_train/log'
         configuration['threads'] = 8
 
+        configuration['optimizer'] = Optimizer.Adam
         configuration['initial_learning_rate'] = random.uniform(1e-5, 1e-4)
         configuration['leaning_rate_decay'] = 0.5
         configuration['decay_iterations'] = 10
+        configuration['Optimizer'] = Optimizer.Adam
         configuration['l2_regularization'] = random.uniform(1e-4, 1e-3)
         configuration['batch_size'] = random.randrange(32, 128, 32)
         configuration['n_epochs'] = 20
 
         configuration['train_log_frequency'] = 10
         configuration['validation_log_frequency'] = 50
+        configuration['checkpoint_save_frequency'] = 50
         configuration['log_immediate_results'] = True
 
         file = join(output_folder, 'setting_{}'.format(i)+'.json')
