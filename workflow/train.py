@@ -43,7 +43,10 @@ def train(params):
         elif params['project_type'] == ProjectType.detection:
             pass
         elif params['project_type'] == ProjectType.segmentation:
-            pass
+            x = tf.placeholder(tf.float32, (params['batch_size'], params['input_image_height'],
+                                            params['input_image_width'], depth), 'input')
+            y = tf.placeholder(tf.uint8, (params['batch_size'], params['input_image_height'],
+                                            params['input_image_width'], 1), 'label')
         else:
             raise NotImplementedError('unknown project type')
 
@@ -57,14 +60,16 @@ def train(params):
                                         params['leaning_rate_decay'],
                                         staircase=False
                                         )
-        tf.summary.scalar('learning_rate', lr)
+        lr_summary = tf.summary.scalar('learning_rate', lr)
         if params['optimizer'] == Optimizer.Adam:
             opt = tf.train.AdamOptimizer(lr)
         elif params['optimizer'] == Optimizer.SGD:
             opt = tf.train.GradientDescentOptimizer(lr)
         else:
             raise NotImplementedError('unknown Optimizer')
-        total_loss = cnn.loss(cnn.inference(x, reuse=False), y)
+        y_pred = cnn.inference(x, reuse=False)
+        total_loss = cnn.loss(y_pred, y)
+        accuracy = cnn.accuracy(y_pred, y)
         grads_and_vars = opt.compute_gradients(total_loss)
         train_op = opt.apply_gradients(grads_and_vars, global_step=global_step)
 
@@ -81,15 +86,16 @@ def train(params):
         # Summaries for loss and accuracy
         timestamp = str(int(time.time()))
         loss_summary = tf.summary.scalar("loss", total_loss)
+        acc_summary = tf.summary.scalar("accuracy", accuracy)
 
         # Train Summaries
-        train_summary_op = tf.summary.merge([loss_summary, grad_summaries_merged])
+        train_summary_op = tf.summary.merge([loss_summary, acc_summary, lr_summary, grad_summaries_merged])
         train_summary_dir = join(params['log_path'], 'train')
         os.makedirs(train_summary_dir, exist_ok=True)
         train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
 
         # Dev summaries
-        dev_summary_op = tf.summary.merge([loss_summary])
+        dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
         valid_summary_dir = join(params['log_path'], 'valid')
         os.makedirs(valid_summary_dir, exist_ok=True)
         dev_summary_writer = tf.summary.FileWriter(valid_summary_dir, sess.graph)
@@ -111,11 +117,11 @@ def train(params):
                 x: x_batch,
                 y: y_batch
             }
-            _, step, summaries, loss = sess.run(
-                [train_op, global_step, train_summary_op, total_loss],
+            _, step, summaries, loss, acc = sess.run(
+                [train_op, global_step, train_summary_op, total_loss, accuracy],
                 feed_dict)
             time_str = datetime.now().isoformat()
-            print("{}: step {}, loss {:g}".format(time_str, step, loss))
+            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, acc))
             if step % params['train_log_frequency'] == 0:
                 train_summary_writer.add_summary(summaries, step)
 
@@ -127,11 +133,11 @@ def train(params):
                 x: x_batch,
                 y: y_batch
             }
-            step, summaries, loss = sess.run(
-                [global_step, dev_summary_op, total_loss],
+            step, summaries, loss, acc = sess.run(
+                [global_step, dev_summary_op, total_loss, accuracy],
                 feed_dict)
             time_str = datetime.now().isoformat()
-            print("{}: step {}, loss {:g}".format(time_str, step, loss))
+            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, acc))
             if writer:
                 writer.add_summary(summaries, step)
 

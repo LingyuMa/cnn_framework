@@ -130,3 +130,14 @@ class Resnet:
         tf.summary.scalar('total_loss', total_loss)
         tf.summary.scalar('fn_loss', cross_entropy_mean)
         return total_loss
+
+    def accuracy(self, logits, labels):
+        logits = tf.cast(logits, tf.float32)
+        labels = tf.cast(labels, tf.float32)
+        y_pred = tf.argmax(logits, axis=1)
+        y_truth = tf.argmax(labels, axis=1)
+        print(y_pred)
+        print(y_truth)
+        n_correct = tf.reduce_mean(tf.cast(tf.equal(y_pred, y_truth), tf.float16))
+        print(n_correct)
+        return 100. * n_correct
