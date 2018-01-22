@@ -7,30 +7,38 @@ from data.dataset.dataset_builder import DatasetsCoordinator
 from typedef import *
 
 
-def _augment_flip(in_images, flip_type=FlipType.combined):
+def _augment_flip(in_images, flip_type=FlipType.combined, in_labels=None):
     for i in range(len(in_images)):
         if flip_type == FlipType.combined or flip_type == FlipType.left_right:
             if random() > 0.5:
                 in_images[i] = np.fliplr(in_images[i])
+                if in_labels is not None:
+                    in_labels[i] = np.fliplr(in_labels[i])
         if flip_type == FlipType.combined or flip_type == FlipType.up_down:
             if random() > 0.5:
                 in_images[i] = np.flipud(in_images[i])
-    return in_images
+                if in_labels is not None:
+                    in_labels[i] = np.flipud(in_labels[i])
+    return in_images, in_labels
 
 
-def _augment_rotate(in_images, rotate_type=RotationType.limit_90, padding_mode='symmetric'):
+def _augment_rotate(in_images, rotate_type=RotationType.limit_90, padding_mode='symmetric', in_labels=None):
     for i in range(len(in_images)):
         if rotate_type == RotationType.limit_90:
             angle = random() * 90. - 45.
             in_images[i] = rotate(in_images[i], angle, preserve_range=True, mode=padding_mode)
+            if in_labels is not None:
+                in_labels[i] = rotate(in_labels[i], angle, preserve_range=True, mode='constant', cval=0)
         else:
             angle = random() * 180. - 90.
             in_images[i] = rotate(in_images[i], angle, preserve_range=True, mode=padding_mode)
-    return in_images
+            if in_labels is not None:
+                in_labels[i] = rotate(in_labels[i], angle, preserve_range=True, mode='constant', cval=0)
+    return in_images, in_labels
 
 
-def _augment_shift(in_images, shift_type = ShiftType.combined):
-    return in_images
+def _augment_shift(in_images, shift_type = ShiftType.combined, in_labels=None):
+    return in_images, in_labels
 
 
 def _augment_noise(in_images, noise_type=NoiseType.gaussian_noise, std=1.):
@@ -63,14 +71,29 @@ class DataProvider:
                 idx = i
             if idx + batch_size >= size:
                 continue
-            images, label = self.datasets.train_ds.read(idx, batch_size)
+
+            images, labels = self.datasets.train_ds.read(idx, batch_size)
+
             if self.params['augmentation_flip'] != FlipType.none:
-                images = _augment_flip(images, self.params['augmentation_flip'])
+                if self.params['project_type'] == ProjectType.classification:
+                    images, _ = _augment_flip(images, self.params['augmentation_flip'])
+                elif self.params['project_type'] == ProjectType.segmentation:
+                    images, labels = _augment_flip(images, self.params['augmentation_flip'], in_labels=labels)
+
             if self.params['augmentation_rotation'] != RotationType.none:
-                images = _augment_rotate(images, self.params['augmentation_rotation'], self.params['pad_mode'])
+                if self.params['project_type'] == ProjectType.classification:
+                    images, _ = _augment_rotate(images, self.params['augmentation_rotation'], self.params['pad_mode'])
+                elif self.params['project_type'] == ProjectType.segmentation:
+                    images, labels = _augment_rotate(images, self.params['augmentation_rotation'],
+                                                     self.params['pad_mode'], in_labels=labels)
+
             if self.params['augmentation_shift'] != ShiftType.none:
-                images = _augment_shift(images, self.params['augmentation_shift'])
-            yield images, label
+                if self.params['project_type'] == ProjectType.classification:
+                    images, _ = _augment_shift(images, self.params['augmentation_shift'])
+                elif self.params['project_type'] == ProjectType.segmentation:
+                    images, labels = _augment_shift(images, self.params['augmentation_shift'], in_labels=labels)
+
+            yield images, labels
 
     def validation_generator(self):
         batch_size = self.params['batch_size']

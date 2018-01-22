@@ -100,7 +100,11 @@ class Dataset():
         elif self.params['project_type'] == ProjectType.detection:
             raise NotImplementedError('object detection not implemented')
         elif self.params['project_type'] == ProjectType.segmentation:
-            raise NotImplementedError('object segmentation not implemented')
+            label_group.attrs['width'] = width
+            label_group.attrs['height'] = height
+
+            label_ds = label_group.create_dataset('y', (capacity, width, height, 1), dtype='uint8',
+                                                  maxshape=(len(self.img_list), width, height, 1))
 
         # write to hdf5 file
         for idx, image in enumerate(utils.image_loader(self.img_base_dir, self.img_list, width, height, depth,
@@ -113,7 +117,13 @@ class Dataset():
                 else:
                     capacity = len(self.img_list)
                 img_ds.resize((capacity, width, height, depth))
-                label_ds.resize((capacity, label_size))
+                if self.params['project_type'] == ProjectType.classification:
+                    label_ds.resize((capacity, label_size))
+                elif self.params['project_type'] == ProjectType.segmentation:
+                    label_ds.resize((capacity, width, height, 1))
+                else:
+                    raise NotImplementedError('unknown project type')
+
             img_ds[idx] = image
             label_ds[idx] = self.label.get(self.img_list[idx])
             print("write to dataset {}: {}/{}".format(self.name, idx + 1, len(self.img_list)))
