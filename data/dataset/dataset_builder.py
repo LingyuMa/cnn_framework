@@ -11,7 +11,7 @@ from typedef import *
 
 class DatasetsCoordinator:
     def __init__(self, params):
-        random.seed(3)
+        random.seed(10)
         self.params = params
         self.ds_path = params['hdf5_path']
         self.train_ds = None

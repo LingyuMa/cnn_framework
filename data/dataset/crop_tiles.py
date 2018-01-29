@@ -49,8 +49,8 @@ if __name__ == "__main__":
                     crop_image = image[y * inc_h: y * inc_h + tile_size, x * inc_w: x * inc_w + tile_size]
                     crop_label = label[y * inc_h: y * inc_h + tile_size, x * inc_w: x * inc_w + tile_size]
                 else:
-                    crop_image = np.zeros(image.shape).astype(np.uint8)
-                    crop_label = np.zeros(label.shape).astype(np.uint8)
+                    crop_image = np.zeros([tile_size, tile_size, image.shape[2]]).astype(np.uint8)
+                    crop_label = np.zeros([tile_size, tile_size]).astype(np.uint8)
                     y_crop = h - y * inc_h if y * inc_h + tile_size >= h else tile_size
                     x_crop = w - x * inc_w if x * inc_w + tile_size >= w else tile_size
                     crop_image[:y_crop, :x_crop] = image[y * inc_h: y * inc_h + y_crop,
@@ -65,5 +65,5 @@ if __name__ == "__main__":
                 imsave(join(images_out_dir, img_out_name), crop_image)
                 imsave(join(labels_out_dir, label_out_name), crop_label)
 
-                file.write(img_name + ' , ' + label_out_name)
+                file.write(img_out_name + ',' + join(labels_out_dir, label_out_name) + '\n')
     file.close()

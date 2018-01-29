@@ -59,7 +59,9 @@ class SegmentationLabel:
             self.lookup[row[0]] = row[1]
 
     def get(self, image_name):
-        return imread(self.lookup[image_name], as_grey=True)
+        print(image_name)
+        print(self.lookup[image_name])
+        return np.expand_dims(imread(self.lookup[image_name], as_grey=True) / 255, axis=2)
 
 
 class DetectionLabel:

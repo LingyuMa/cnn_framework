@@ -11,6 +11,7 @@ import tensorflow as tf
 from config.queue_files import queue_files
 from data.dataset.data_provider import DataProvider
 from models.resnet_base import Resnet
+from models.unet import Unet
 from typedef import *
 
 
@@ -20,9 +21,8 @@ def train(params):
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             # build the network
-            cnn = Resnet(
-                label_size=params['label_size'],
-                layer_num=1,
+            cnn = Unet(
+                use_bn=False,
                 l2_reg=params['l2_regularization']
             )
 

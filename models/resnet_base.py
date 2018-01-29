@@ -136,8 +136,5 @@ class Resnet:
         labels = tf.cast(labels, tf.float32)
         y_pred = tf.argmax(logits, axis=1)
         y_truth = tf.argmax(labels, axis=1)
-        print(y_pred)
-        print(y_truth)
         n_correct = tf.reduce_mean(tf.cast(tf.equal(y_pred, y_truth), tf.float16))
-        print(n_correct)
         return 100. * n_correct
