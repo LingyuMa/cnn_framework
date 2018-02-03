@@ -72,7 +72,7 @@ class Unet:
 
         # deconv 3rd block
         deconv_2_0 = deconv_layer(deconv_1_1, 'deconv_2', 3, 32, self.l2_reg, he_initializer,
-                                stride=2, bn=self.use_bn, training=is_training, relu=True)
+                                  stride=2, bn=self.use_bn, training=is_training, relu=True)
 
         deconv_2_0 = concat_layer(deconv_2_0, conv_0_1)
 
