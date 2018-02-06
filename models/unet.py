@@ -46,7 +46,6 @@ class Unet:
 
         conv_3_1 = conv_layer(conv_3_0, 'conv_3_1', 3, 256, self.l2_reg, he_initializer,
                               bn=self.use_bn, training=is_training, relu=True)
-
         # deconv 1st block
         deconv_0_0 = deconv_layer(conv_3_1, 'deconv_0', 3, 128, self.l2_reg, he_initializer,
                                   stride=2, bn=self.use_bn, training=is_training, relu=True)

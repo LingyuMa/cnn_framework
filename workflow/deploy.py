@@ -13,30 +13,46 @@ from skimage.io import imread, imsave
 from data.dataset.preprocessing import get_images_list
 from models.unet import Unet
 
+import matplotlib.pyplot as plt
+
 
 def test(image_list, ckpt_path, params, output_folder, export_folder):
     meta_file = ".".join([tf.train.latest_checkpoint(ckpt_path), "meta"])
-    print(meta_file)
     tf.reset_default_graph()
-    #init_op = tf.global_variables_initializer()
-    saver = tf.train.import_meta_graph(meta_file)
-    cnn = Unet(
-        use_bn=False,
-        l2_reg=params['l2_regularization']
-    )
-    session_conf = tf.ConfigProto(allow_soft_placement=True)
-    with tf.Session(config=session_conf) as sess:
-        #sess.run(init_op)
-        saver.restore(sess, tf.train.latest_checkpoint(ckpt_path))
-        # print(sess.run(tf.global_variables()))
-        #print(sess.run('conv_1_0:0'))
-        for idx, img_path in enumerate(image_list):
-            img = normalize_img(imread(img_path))
-            img = img[64:, 64:, :]
-            size = img.shape
-            in_tensor = tf.placeholder('float32', [1, size[0], size[1], size[2]], name='input')
-            output_op = tf.nn.sigmoid(cnn.inference(in_tensor, is_training=False))
-            out = sess.run(output_op, {in_tensor: np.expand_dims(img, axis=0)})
+    graph = tf.Graph()
+    with graph.as_default():
+        with tf.Session() as sess:
+            saver = tf.train.import_meta_graph(meta_file)
+            saver.restore(sess, tf.train.latest_checkpoint(ckpt_path))
+
+            for idx, img_path in enumerate(image_list):
+                img = normalize_img(imread(img_path))
+                img_batch = np.zeros((32, 64, 64, 4)).astype(np.float32)
+                img_batch[0, :, :, :] = img[:64, :64, :]
+                img_batch[1, :, :, :] = img[64:128, 64:128, :]
+
+                pred = tf.get_collection("outputs")
+                in_tensor = graph.get_operation_by_name('input').outputs[0]
+                tmp = sess.run(tf.sigmoid(pred), feed_dict={in_tensor: img_batch})
+                print(tmp[0][0, :, :, :].shape)
+
+                idx = 1
+
+                plt.figure()
+                plt.title('predict')
+                plt.imshow(tmp[0][idx, :, :, :].squeeze(), cmap='gray')
+                plt.show()
+
+                plt.figure()
+                plt.title('truth')
+                plt.imshow(img_batch[idx, :, :, :])
+                plt.show()
+
+                break
+
+
+
+
 
 
 def normalize_img(img):

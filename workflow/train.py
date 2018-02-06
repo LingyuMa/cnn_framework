@@ -73,6 +73,10 @@ def train(params):
         grads_and_vars = opt.compute_gradients(total_loss)
         train_op = opt.apply_gradients(grads_and_vars, global_step=global_step)
 
+        # Add collection
+        tf.add_to_collection("inputs", x)
+        tf.add_to_collection("outputs", y_pred)
+
         # Keep track of gradient values and sparsity (optional)
         grad_summaries = []
         for g, v in grads_and_vars:
