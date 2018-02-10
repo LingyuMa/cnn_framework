@@ -24,14 +24,14 @@ def crop(image, tile_size, ratio, in_padding):
 
 
 def get_region(img, x_min, x_max, y_min, y_max):
-    if x_min >= 0 and x_max < img.shape[1] and y_min >= 0 and y_max < img.shape[0]:
+    if x_min >= 0 and x_max <= img.shape[1] and y_min >= 0 and y_max <= img.shape[0]:
         return img[y_min:y_max, x_min:x_max]
     new_w = x_max - x_min
     new_h = y_max - y_min
     if img.ndim == 2:
-        crop_patch = np.zeros((new_h, new_w)).astype(np.uint8)
+        crop_patch = np.zeros((new_h, new_w))
     elif img.ndim == 3:
-        crop_patch = np.zeros((new_h, new_w, img.shape[2])).astype(np.uint8)
+        crop_patch = np.zeros((new_h, new_w, img.shape[2]))
     else:
         raise NotImplementedError('unknown image type')
     new_x_min = max(x_min, 0)
