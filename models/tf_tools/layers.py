@@ -4,12 +4,12 @@ from models.tf_tools.utils import create_variables, activation_summary
 
 
 def conv_layer(input_tensor, name, kernel_size, output_channels, weight_decay, initializer,
-               stride=1, bn=False, training=False, relu=True):
+               stride=1, bn=False, training=False, relu=True, padding='SAME'):
     input_channels = input_tensor.get_shape().as_list()[-1]
     with tf.variable_scope(name) as scope:
         kernel = create_variables('weights', [kernel_size, kernel_size, input_channels, output_channels],
                                   weight_decay=weight_decay, initializer=initializer)
-        conv = tf.nn.conv2d(input_tensor, kernel, [1, stride, stride, 1], padding='SAME')
+        conv = tf.nn.conv2d(input_tensor, kernel, [1, stride, stride, 1], padding=padding)
         biases = create_variables('biases', [output_channels], initializer=tf.constant_initializer(0.0))
         conv_2d = tf.nn.bias_add(conv, biases)
         if bn:
@@ -21,7 +21,7 @@ def conv_layer(input_tensor, name, kernel_size, output_channels, weight_decay, i
 
 
 def deconv_layer(input_tensor, name, kernel_size, output_channels, weight_decay, initializer,
-                 stride=1, bn=False, training=False, relu=True):
+                 stride=1, bn=False, training=False, relu=True, padding='SAME'):
     input_shape = input_tensor.get_shape().as_list()
     input_channels = input_shape[-1]
     output_shape = list(input_shape)
@@ -31,7 +31,7 @@ def deconv_layer(input_tensor, name, kernel_size, output_channels, weight_decay,
     with tf.variable_scope(name) as scope:
         kernel = create_variables('weights', [kernel_size, kernel_size, output_channels, input_channels],
                                   weight_decay=weight_decay, initializer=initializer)
-        deconv = tf.nn.conv2d_transpose(input_tensor, kernel, output_shape, [1, stride, stride, 1], padding='SAME')
+        deconv = tf.nn.conv2d_transpose(input_tensor, kernel, output_shape, [1, stride, stride, 1], padding=padding)
         biases = create_variables('biases', [output_channels], initializer=tf.constant_initializer(0.0))
         deconv_2d = tf.nn.bias_add(deconv, biases)
         if bn:
@@ -42,9 +42,9 @@ def deconv_layer(input_tensor, name, kernel_size, output_channels, weight_decay,
     return deconv_2d
 
 
-def max_pooling(input_tensor, name, factor=2):
+def max_pooling(input_tensor, name, factor=2, padding='SAME'):
     pool = tf.nn.max_pool(input_tensor, ksize=[1, factor, factor, 1], strides=[1, factor, factor, 1],
-                          padding='SAME', name=name)
+                          padding=padding, name=name)
     print('Pooling layer {0} -> {1}'.format(input_tensor.get_shape().as_list(), pool.get_shape().as_list()))
     return pool
 
@@ -79,6 +79,19 @@ def concat_layer(input_tensor1, input_tensor2):
     output = tf.concat([input_tensor1, input_tensor2], 3)
     input1_shape = input_tensor1.get_shape().as_list()
     input2_shape = input_tensor2.get_shape().as_list()
+    output_shape = output.get_shape().as_list()
+    print('Concat layer {0} and {1} -> {2}'.format(input1_shape, input2_shape, output_shape))
+    return output
+
+
+def crop_and_concat_layer(input_tensor1, input_tensor2):
+    input1_shape = input_tensor1.get_shape().as_list()
+    input2_shape = input_tensor2.get_shape().as_list()
+    # offsets for the top left corner of the crop
+    offsets = [0, (input1_shape[1] - input2_shape[1]) // 2, (input1_shape[2] - input2_shape[2]) // 2, 0]
+    size = [-1, input2_shape[1], input2_shape[2], -1]
+    input1_crop = tf.slice(input_tensor1, offsets, size)
+    output = tf.concat([input1_crop, input_tensor2], 3)
     output_shape = output.get_shape().as_list()
     print('Concat layer {0} and {1} -> {2}'.format(input1_shape, input2_shape, output_shape))
     return output

@@ -53,7 +53,8 @@ def assemble(tiles, image_size, tile_size, batch_size):
 def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
     batch_size = params['batch_size']
     assert(params['input_image_width'] == params['input_image_height'])
-    tile_size = params['input_image_width']
+    tile_size = params['target_image_width']
+    in_padding = int((params['input_image_width'] - params['target_image_width']) / 2)
     meta_file = ".".join([tf.train.latest_checkpoint(ckpt_path), "meta"])
     tf.reset_default_graph()
     graph = tf.Graph()
@@ -70,7 +71,7 @@ def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
                     img = np.concatenate([img, 255 * np.ones((*img.shape[:-1], 1))], axis=2)
                 img = normalize_img(img)
 
-                image_batches = prepare_batches(crop(img, tile_size, 1, 0), batch_size)
+                image_batches = prepare_batches(crop(img, tile_size, 1, in_padding), batch_size)
                 #print(np.array(image_batches).shape)
                 results = []
                 for batch in image_batches:

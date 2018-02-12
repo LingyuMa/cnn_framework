@@ -68,8 +68,10 @@ class Dataset():
         # create hdf5 file handle
         f_handle = h5py.File(self.path, 'w')
         # get parameters
-        width = self.params['input_image_width']
-        height = self.params['input_image_height']
+        input_width = self.params['input_image_width']
+        input_height = self.params['input_image_height']
+        target_width = self.params['target_image_width']
+        target_height = self.params['target_image_height']
         if self.params['input_image_type'] == ImageType.rgb:
             depth = 3
         elif self.params['input_image_type'] == ImageType.binary or self.params['input_image_type'] == ImageType.gray:
@@ -83,13 +85,13 @@ class Dataset():
         img_group = f_handle.create_group('images')
         label_group = f_handle.create_group('labels')
 
-        img_group.attrs['width'] = width
-        img_group.attrs['height'] = height
+        img_group.attrs['width'] = input_width
+        img_group.attrs['height'] = input_height
         img_group.attrs['depth'] = depth
 
         capacity = 2
-        img_ds = img_group.create_dataset('x', (capacity, width, height, depth), dtype='float32',
-                                          maxshape=(len(self.img_list), width, height, depth))
+        img_ds = img_group.create_dataset('x', (capacity, input_width, input_height, depth), dtype='float32',
+                                          maxshape=(len(self.img_list), input_width, input_height, depth))
 
         if self.params['project_type'] == ProjectType.classification:
             label_size = self.params['label_size']
@@ -100,15 +102,15 @@ class Dataset():
         elif self.params['project_type'] == ProjectType.detection:
             raise NotImplementedError('object detection not implemented')
         elif self.params['project_type'] == ProjectType.segmentation:
-            label_group.attrs['width'] = width
-            label_group.attrs['height'] = height
+            label_group.attrs['width'] = target_width
+            label_group.attrs['height'] = target_height
 
-            label_ds = label_group.create_dataset('y', (capacity, width, height, 1), dtype='uint8',
-                                                  maxshape=(len(self.img_list), width, height, 1))
+            label_ds = label_group.create_dataset('y', (capacity, target_width, target_height, 1), dtype='uint8',
+                                                  maxshape=(len(self.img_list), target_width, target_height, 1))
 
         # write to hdf5 file
-        for idx, image in enumerate(utils.image_loader(self.img_base_dir, self.img_list, width, height, depth,
-                                                       self.params['normalization_flag'],
+        for idx, image in enumerate(utils.image_loader(self.img_base_dir, self.img_list, input_width, input_height,
+                                                       depth, self.params['normalization_flag'],
                                                        self.params['histo_equalization'])):
             # increase dataset if necessary
             if idx + 1 > capacity:
@@ -116,11 +118,11 @@ class Dataset():
                     capacity *= 2
                 else:
                     capacity = len(self.img_list)
-                img_ds.resize((capacity, width, height, depth))
+                img_ds.resize((capacity, input_width, input_height, depth))
                 if self.params['project_type'] == ProjectType.classification:
                     label_ds.resize((capacity, label_size))
                 elif self.params['project_type'] == ProjectType.segmentation:
-                    label_ds.resize((capacity, width, height, 1))
+                    label_ds.resize((capacity, target_width, target_height, 1))
                 else:
                     raise NotImplementedError('unknown project type')
 

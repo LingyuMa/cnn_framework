@@ -35,6 +35,8 @@ def train(params):
             depth = 1
         elif params['input_image_type'] == ImageType.rgba:
             depth = 4
+        else:
+            raise NotImplementedError('unknown image type')
 
         if params['project_type'] == ProjectType.classification:
             x = tf.placeholder(tf.float32, (params['batch_size'], params['input_image_height'],
@@ -45,8 +47,8 @@ def train(params):
         elif params['project_type'] == ProjectType.segmentation:
             x = tf.placeholder(tf.float32, (params['batch_size'], params['input_image_height'],
                                             params['input_image_width'], depth), 'input')
-            y = tf.placeholder(tf.uint8, (params['batch_size'], params['input_image_height'],
-                                            params['input_image_width'], 1), 'label')
+            y = tf.placeholder(tf.uint8, (params['batch_size'], params['target_image_height'],
+                                            params['target_image_width'], 1), 'label')
         else:
             raise NotImplementedError('unknown project type')
 

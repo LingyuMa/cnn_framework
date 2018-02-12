@@ -29,6 +29,8 @@ def config(output_folder, random_flag=False, number=1):
         configuration['input_image_width'] = 128
         configuration['input_image_height'] = 128
         configuration['input_image_type'] = ImageType.rgb
+        configuration['target_image_width'] = 128
+        configuration['target_image_height'] = 128
         configuration['label_size'] = 102
 
         configuration['train_val_separation'] = 0.9

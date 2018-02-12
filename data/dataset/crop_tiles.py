@@ -80,8 +80,8 @@ if __name__ == "__main__":
             img_out_name = str(idx) + '_' + str(i) + '.png'
             label_out_name = str(idx) + '_' + str(i) + '.png'
 
-            imsave(join(images_out_dir, img_out_name), crop_image_tile)
-            imsave(join(labels_out_dir, label_out_name), crop_label_tile)
+            imsave(join(images_out_dir, img_out_name), crop_image_tile.astype(np.uint8))
+            imsave(join(labels_out_dir, label_out_name), crop_label_tile.astype(np.uint8))
 
             file.write(img_out_name + ',' + join(labels_out_dir, label_out_name) + '\n')
             i += 1
