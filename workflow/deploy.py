@@ -50,6 +50,31 @@ def assemble(tiles, image_size, tile_size, batch_size):
     return res[:image_size[0], :image_size[1]]
 
 
+def write_to_txt(file, name, image):
+    encode_line = name + ','
+    pt = 0
+    width = image.shape[1]
+    height = image.shape[0]
+    start = -1
+    end = -1
+    while pt < height * width:
+        if image[pt % height][int(pt / height)]:
+            if start == -1:
+                start = pt + 1
+                end = pt + 1
+            else:
+                end = pt + 1
+        else:
+            if start is not -1:
+                encode_line += str(start) + ' ' + str(end - start + 1) + ' '
+            start = -1
+        pt += 1
+    if start is not -1:
+        encode_line += str(start) + ' ' + str(end - start + 1)
+
+    file.write(encode_line)
+
+
 def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
     batch_size = params['batch_size']
     assert(params['input_image_width'] == params['input_image_height'])
@@ -58,6 +83,9 @@ def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
     meta_file = ".".join([tf.train.latest_checkpoint(ckpt_path), "meta"])
     tf.reset_default_graph()
     graph = tf.Graph()
+    file = open(join(export_folder, 'submission.txt'), 'w')
+    file.write('ImageId,EncodedPixels')
+    file.write('\n')
     with graph.as_default():
         with tf.Session() as sess:
             saver = tf.train.import_meta_graph(meta_file)
@@ -81,6 +109,8 @@ def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
                 #print(np.array(results).shape)
                 res_image = assemble(np.array(results).squeeze(axis=1), img.shape, tile_size, batch_size)
                 plt.imsave(join(output_folder, img_name), res_image.squeeze())
+                write_to_txt(file, img_name.split('.')[0], res_image > 0.5)
+                file.write('\n')
                 print("test image {}/{}, using {:2.3f}s".format(idx, len(image_list), time.time() - start_time))
 
 
