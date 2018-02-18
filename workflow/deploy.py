@@ -9,11 +9,20 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from skimage.io import imread, imsave
 import skimage.color as color
+from skimage.io import imread, imsave
+from skimage.filters import threshold_otsu
 
 from data.dataset.crop_tiles import crop
 from data.dataset.preprocessing import get_images_list
+
+
+def iou(input_map, target_map, thresh=0.5):
+    pred = (input_map > thresh).astype(np.float32)
+    truth = (target_map > 0.).astype(np.float32)
+    intersection = np.sum(pred + truth > 1)
+    union = np.sum(pred + truth > 0)
+    return intersection / union
 
 
 def normalize_img(img):
@@ -50,32 +59,7 @@ def assemble(tiles, image_size, tile_size, batch_size):
     return res[:image_size[0], :image_size[1]]
 
 
-def write_to_txt(file, name, image):
-    encode_line = name + ','
-    pt = 0
-    width = image.shape[1]
-    height = image.shape[0]
-    start = -1
-    end = -1
-    while pt < height * width:
-        if image[pt % height][int(pt / height)]:
-            if start == -1:
-                start = pt + 1
-                end = pt + 1
-            else:
-                end = pt + 1
-        else:
-            if start is not -1:
-                encode_line += str(start) + ' ' + str(end - start + 1) + ' '
-            start = -1
-        pt += 1
-    if start is not -1:
-        encode_line += str(start) + ' ' + str(end - start + 1)
-
-    file.write(encode_line)
-
-
-def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
+def test(base_dir, label_dir, label_prefix, image_list, ckpt_path, params, output_folder):
     batch_size = params['batch_size']
     assert(params['input_image_width'] == params['input_image_height'])
     tile_size = params['target_image_width']
@@ -83,9 +67,7 @@ def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
     meta_file = ".".join([tf.train.latest_checkpoint(ckpt_path), "meta"])
     tf.reset_default_graph()
     graph = tf.Graph()
-    file = open(join(export_folder, 'submission.txt'), 'w')
-    file.write('ImageId,EncodedPixels')
-    file.write('\n')
+    iou_list = []
     with graph.as_default():
         with tf.Session() as sess:
             saver = tf.train.import_meta_graph(meta_file)
@@ -100,32 +82,40 @@ def test(base_dir, image_list, ckpt_path, params, output_folder, export_folder):
                 img = normalize_img(img)
 
                 image_batches = prepare_batches(crop(img, tile_size, 1, in_padding), batch_size)
-                #print(np.array(image_batches).shape)
                 results = []
                 for batch in image_batches:
                     pred = tf.get_collection("outputs")
                     in_tensor = graph.get_operation_by_name('input').outputs[0]
                     results.append(sess.run(tf.sigmoid(pred), feed_dict={in_tensor: batch}))
-                #print(np.array(results).shape)
                 res_image = assemble(np.array(results).squeeze(axis=1), img.shape, tile_size, batch_size)
-                plt.imsave(join(output_folder, img_name), res_image.squeeze())
-                write_to_txt(file, img_name.split('.')[0], res_image > 0.5)
-                file.write('\n')
-                print("test image {}/{}, using {:2.3f}s".format(idx, len(image_list), time.time() - start_time))
+                if label_dir is not None:
+                    label = imread(join(label_dir, label_prefix+img_name), as_grey=True) / 255.
+                    thresh = threshold_otsu((255 * res_image.squeeze()).astype(np.uint8))
+                    iou_val = iou(res_image.squeeze(), label, thresh=float(thresh/255.))
+                    iou_list.append(iou_val)
+                    print("test image {}/{}, using {:2.3f}s, iou: {:2.3f}".format(
+                        idx, len(image_list), time.time() - start_time, iou_val))
+                else:
+                    print("test image {}/{}, using {:2.3f}s".format(idx, len(image_list), time.time() - start_time))
+
+                imsave(join(output_folder, img_name), (255 * res_image.squeeze()).astype(np.uint8))
+
+    if iou_list:
+        print("average iou: {}".format(np.mean(iou_list)))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--checkpoint", help="checkpoint location")
     parser.add_argument("-i", "--input", help="input images folder")
+    parser.add_argument("-l", "--label", default=None, help="label images folder")
     parser.add_argument("-f", "--config", help="config file")
+    parser.add_argument("-p", "--prefix", default='', help='label prefix')
     args = parser.parse_args()
 
     img_list = [img_name for img_name in get_images_list(args.input)]
     output_folder = join(args.input, 'output')
-    export_folder = join(args.input, 'export')
     os.makedirs(output_folder, exist_ok=True)
-    os.makedirs(export_folder, exist_ok=True)
     with open(args.config, 'r') as f:
         params = json.load(f)
-    test(args.input, img_list, args.checkpoint, params, output_folder, export_folder)
+    test(args.input, args.label, args.prefix, img_list, args.checkpoint, params, output_folder)
