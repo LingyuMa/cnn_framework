@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 import sys
 import os
+import shutil
 from os.path import join
 sys.path.append(os.path.abspath(os.curdir))
 
@@ -15,7 +16,12 @@ from models.unet import Unet
 from typedef import *
 
 
-def train(params):
+def train(params, reset=False):
+    if reset:
+        shutil.rmtree(params['checkpoint_path'], ignore_errors=True)
+        shutil.rmtree(params['log_path'], ignore_errors=True)
+        shutil.rmtree(params['hdf5_path'], ignore_errors=True)
+
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(allow_soft_placement=True)
         sess = tf.Session(config=session_conf)
@@ -95,19 +101,24 @@ def train(params):
         acc_summary = tf.summary.scalar("accuracy", accuracy)
 
         # Train Summaries
+        os.makedirs(params['log_path'], exist_ok=True)
+        cur_datetime = str(datetime.now())
+        log_train_path = join(params['log_path'], cur_datetime)
+
         train_summary_op = tf.summary.merge([loss_summary, acc_summary, lr_summary, grad_summaries_merged])
-        train_summary_dir = join(params['log_path'], 'train')
+        train_summary_dir = join(log_train_path, 'train')
         os.makedirs(train_summary_dir, exist_ok=True)
         train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
 
         # Dev summaries
         dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
-        valid_summary_dir = join(params['log_path'], 'valid')
+        valid_summary_dir = join(log_train_path, 'valid')
         os.makedirs(valid_summary_dir, exist_ok=True)
         dev_summary_writer = tf.summary.FileWriter(valid_summary_dir, sess.graph)
 
         # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
-        checkpoint_dir = params['checkpoint_path']
+        os.makedirs(params['checkpoint_path'], exist_ok=True)
+        checkpoint_dir = join(params['checkpoint_path'], cur_datetime)
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         os.makedirs(checkpoint_dir, exist_ok=True)
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
@@ -166,6 +177,11 @@ def train(params):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="config files location")
+    parser.add_argument("-r", "--reset", help="hard reset", action='store_true')
+
     args = parser.parse_args()
-    for dic in queue_files(str(args.file)):
-        train(dic)
+    for idx, dic in enumerate(queue_files(str(args.file))):
+        if args.reset and idx == 0:
+            train(dic, True)
+        else:
+            train(dic)

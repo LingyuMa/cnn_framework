@@ -1,3 +1,5 @@
+from os.path import join
+
 import numpy as np
 import pandas as pd
 
@@ -50,18 +52,11 @@ class ClassificationLabel:
 class SegmentationLabel:
     def __init__(self, label_path):
         self.label_path = label_path
-        self.lookup = {}
-        self.load_label_lookup()
-
-    def load_label_lookup(self):
-        label_df = pd.read_csv(self.label_path, sep=',', header=None)
-        for _, row in label_df.iterrows():
-            self.lookup[row[0]] = row[1]
+        self.prefix = ""
 
     def get(self, image_name):
-        print(image_name)
-        print(self.lookup[image_name])
-        return np.expand_dims(imread(self.lookup[image_name], as_grey=True) / 255, axis=2)
+        label_name = self.prefix + image_name
+        return np.expand_dims(imread(join(self.label_path, label_name), as_grey=True) / 255, axis=2)
 
 
 class DetectionLabel:

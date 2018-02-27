@@ -22,8 +22,8 @@ def config(output_folder, random_flag=False, number=1):
 
         configuration['train_images_path'] = '/home/lingyu/Downloads/Caltech101/images'
         configuration['valid_images_path'] = '/home/lingyu/Downloads/Caltech101/images'
-        configuration['train_label_path'] = '/home/lingyu/Downloads/Caltech101/label.csv'
-        configuration['valid_label_path'] = '/home/lingyu/Downloads/Caltech101/label.csv'
+        configuration['train_label_path'] = '/home/lingyu/Downloads/Caltech101/labels'
+        configuration['valid_label_path'] = '/home/lingyu/Downloads/Caltech101/labels'
         configuration['hdf5_path'] = '/home/lingyu/Documents/images/datasets'
 
         configuration['input_image_width'] = 128
