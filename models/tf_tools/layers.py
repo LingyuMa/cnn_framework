@@ -97,6 +97,15 @@ def crop_and_concat_layer(input_tensor1, input_tensor2):
     return output
 
 
+def crop_layer(input_tensor, crop_size):
+    input_shape = input_tensor.get_shape().as_list()
+    offsets = [0, (input_shape[1] - crop_size) // 2, (input_shape[2] - crop_size) // 2, 0]
+    size = [-1, crop_size, crop_size, -1]
+    input_crop = tf.slice(input_tensor, offsets, size)
+    print('Crop layer {0} -> {1}'.format(input_shape, input_crop.get_shape().as_list()))
+    return input_crop
+
+
 def flatten(input_tensor, name):
     batch_size = input_tensor.get_shape().as_list()[0]
     with tf.variable_scope(name) as scope:

@@ -29,57 +29,123 @@ class Unet:
     def inference(self, input_tensor_batch, is_training=True, reuse=True):
         relu_initializer = tf.orthogonal_initializer(gain=calculate_gain('relu'))
         sigmoid_initializer = tf.orthogonal_initializer(gain=calculate_gain('sigmoid'))
+        paddings = tf.constant([[0, 0], [1, 1], [1, 1], [0, 0]])
 
         # conv 1st block
-        conv_0_0 = conv_layer(input_tensor_batch, 'conv_0_0', 3, 64, self.l2_reg, relu_initializer,
+        input_tensor_batch = tf.pad(input_tensor_batch, paddings, "REFLECT")
+        conv_0_0 = conv_layer(input_tensor_batch, 'conv_0_0', 3, 32, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
-        conv_0_1 = conv_layer(conv_0_0, 'conv_0_1', 3, 64, self.l2_reg, relu_initializer,
+        conv_0_0 = tf.pad(conv_0_0, paddings, "REFLECT")
+        conv_0_1 = conv_layer(conv_0_0, 'conv_0_1', 3, 32, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
         pool_1 = max_pooling(conv_0_1, 'pool_1', padding='VALID')
 
         # conv 2nd block
-        conv_1_0 = conv_layer(pool_1, 'conv_1_0', 3, 128, self.l2_reg, relu_initializer,
+        pool_1 = tf.pad(pool_1, paddings, "REFLECT")
+        conv_1_0 = conv_layer(pool_1, 'conv_1_0', 3, 64, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
-        conv_1_1 = conv_layer(conv_1_0, 'conv_1_1', 3, 128, self.l2_reg, relu_initializer,
+        conv_1_0 = tf.pad(conv_1_0, paddings, "REFLECT")
+        conv_1_1 = conv_layer(conv_1_0, 'conv_1_1', 3, 64, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
         pool_2 = max_pooling(conv_1_1, 'pool_2', padding='VALID')
 
         # conv 3rd block
-        conv_2_0 = conv_layer(pool_2, 'conv_2_0', 3, 256, self.l2_reg, relu_initializer,
+        pool_2 = tf.pad(pool_2, paddings, "REFLECT")
+        conv_2_0 = conv_layer(pool_2, 'conv_2_0', 3, 128, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
-        conv_2_1 = conv_layer(conv_2_0, 'conv_2_1', 3, 256, self.l2_reg, relu_initializer,
+        conv_2_0 = tf.pad(conv_2_0, paddings, "REFLECT")
+        conv_2_1 = conv_layer(conv_2_0, 'conv_2_1', 3, 128, self.l2_reg, relu_initializer,
+                              bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        pool_3 = max_pooling(conv_2_1, 'pool_3', padding='VALID')
+
+        # conv 4th block
+        pool_3 = tf.pad(pool_3, paddings, "REFLECT")
+        conv_3_0 = conv_layer(pool_3, 'conv_3_0', 3, 256, self.l2_reg, relu_initializer,
+                              bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        conv_3_0 = tf.pad(conv_3_0, paddings, "REFLECT")
+        conv_3_1 = conv_layer(conv_3_0, 'conv_3_1', 3, 256, self.l2_reg, relu_initializer,
+                              bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        pool_4 = max_pooling(conv_3_1, 'pool_4', padding='VALID')
+
+        # conv 5th block
+        pool_4 = tf.pad(pool_4, paddings, "REFLECT")
+        conv_4_0 = conv_layer(pool_4, 'conv_4_0', 3, 512, self.l2_reg, relu_initializer,
+                              bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        conv_4_0 = tf.pad(conv_4_0, paddings, "REFLECT")
+        conv_4_1 = conv_layer(conv_4_0, 'conv_4_1', 3, 512, self.l2_reg, relu_initializer,
                               bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
         # deconv 1st block
-        deconv_0_0 = deconv_layer(conv_2_1, 'deconv_0', 3, 128, self.l2_reg, relu_initializer,
+        deconv_0_0 = deconv_layer(conv_4_1, 'deconv_0', 3, 256, self.l2_reg, relu_initializer,
                                   stride=2, bn=self.use_bn, training=is_training, relu=True)
 
-        deconv_0_0 = crop_and_concat_layer(conv_1_1, deconv_0_0)
+        deconv_0_0 = concat_layer(conv_3_1, deconv_0_0)
 
-        deconv_0_0 = conv_layer(deconv_0_0, 'deconv_0_0', 3, 128, self.l2_reg, relu_initializer,
+        deconv_0_0 = tf.pad(deconv_0_0, paddings, "REFLECT")
+        deconv_0_0 = conv_layer(deconv_0_0, 'deconv_0_0', 3, 256, self.l2_reg, relu_initializer,
                                 bn=self.use_bn, training=is_training, relu=True, padding='VALID')
-        deconv_0_1 = conv_layer(deconv_0_0, 'deconv_0_1', 3, 128, self.l2_reg, relu_initializer,
+
+        deconv_0_0 = tf.pad(deconv_0_0, paddings, "REFLECT")
+        deconv_0_1 = conv_layer(deconv_0_0, 'deconv_0_1', 3, 256, self.l2_reg, relu_initializer,
                                 bn=self.use_bn, training=is_training, relu=True, padding='VALID')
 
-        # deconv 2st block
-
-        deconv_1_0 = deconv_layer(deconv_0_1, 'deconv_1', 3, 64, self.l2_reg, relu_initializer,
+        # deconv 2nd block
+        deconv_1_0 = deconv_layer(deconv_0_1, 'deconv_1', 3, 128, self.l2_reg, relu_initializer,
                                   stride=2, bn=self.use_bn, training=is_training, relu=True)
 
-        deconv_1_0 = crop_and_concat_layer(conv_0_1, deconv_1_0)
+        deconv_1_0 = concat_layer(conv_2_1, deconv_1_0)
 
-        deconv_1_0 = conv_layer(deconv_1_0, 'deconv_1_0', 3, 64, self.l2_reg, relu_initializer,
+        deconv_1_0 = tf.pad(deconv_1_0, paddings, "REFLECT")
+        deconv_1_0 = conv_layer(deconv_1_0, 'deconv_1_0', 3, 128, self.l2_reg, relu_initializer,
                                 bn=self.use_bn, training=is_training, relu=True, padding='VALID')
-        deconv_1_1 = conv_layer(deconv_1_0, 'deconv_1_1', 3, 64, self.l2_reg, relu_initializer,
+
+        deconv_1_0 = tf.pad(deconv_1_0, paddings, "REFLECT")
+        deconv_1_1 = conv_layer(deconv_1_0, 'deconv_1_1', 3, 128, self.l2_reg, relu_initializer,
                                 bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        # deconv 3rd block
+        deconv_2_0 = deconv_layer(deconv_1_1, 'deconv_2', 3, 64, self.l2_reg, relu_initializer,
+                                  stride=2, bn=self.use_bn, training=is_training, relu=True)
+
+        deconv_2_0 = concat_layer(conv_1_1, deconv_2_0)
+
+        deconv_2_0 = tf.pad(deconv_2_0, paddings, "REFLECT")
+        deconv_2_0 = conv_layer(deconv_2_0, 'deconv_2_0', 3, 64, self.l2_reg, relu_initializer,
+                                bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        deconv_2_0 = tf.pad(deconv_2_0, paddings, "REFLECT")
+        deconv_2_1 = conv_layer(deconv_2_0, 'deconv_2_1', 3, 64, self.l2_reg, relu_initializer,
+                                bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        # deconv 4th block
+
+        deconv_3_0 = deconv_layer(deconv_2_1, 'deconv_3', 3, 32, self.l2_reg, relu_initializer,
+                                  stride=2, bn=self.use_bn, training=is_training, relu=True)
+
+        deconv_3_0 = concat_layer(conv_0_1, deconv_3_0)
+
+        deconv_3_0 = tf.pad(deconv_3_0, paddings, "REFLECT")
+        deconv_3_0 = conv_layer(deconv_3_0, 'deconv_3_0', 3, 32, self.l2_reg, relu_initializer,
+                                bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        deconv_3_0 = tf.pad(deconv_3_0, paddings, "REFLECT")
+        deconv_3_1 = conv_layer(deconv_3_0, 'deconv_3_1', 3, 32, self.l2_reg, relu_initializer,
+                                bn=self.use_bn, training=is_training, relu=True, padding='VALID')
+
+        # cropping layer
+        crop = crop_layer(deconv_3_1, 90)
 
         # sigmoid layer
-        output = conv_layer(deconv_1_1, 'output', 1, 1, self.l2_reg, sigmoid_initializer,
+        output = conv_layer(crop, 'output', 1, 1, self.l2_reg, sigmoid_initializer,
                             bn=self.use_bn, training=is_training, relu=False, padding='VALID')
         return output
 
