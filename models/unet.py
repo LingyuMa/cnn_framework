@@ -1,9 +1,9 @@
 import math
 
-import tensorflow as tf
+import numpy as np
 
-from models.tf_tools.utils import create_variables, activation_summary
 from models.tf_tools.layers import *
+from models.tf_tools.cost import dice_loss, weighted_dice_loss
 
 
 def calculate_gain(nonlinearity):
@@ -18,7 +18,6 @@ def calculate_gain(nonlinearity):
         return math.sqrt(2.0 / (1 + negative_slope ** 2))
     else:
         raise ValueError('unknown activation function')
-
 
 
 class Unet:
@@ -165,3 +164,19 @@ class Unet:
         intersection = tf.reduce_sum(tf.cast(pred + truth > 1., tf.float32))
         union = tf.reduce_sum(tf.cast(pred + truth > 0, tf.float32))
         return intersection / union
+
+    def mean_accuracy(self, logits, mask):
+        output_sigmoid = tf.sigmoid(logits)
+        truth = tf.cast(mask > 0, tf.float32)
+        iou_sum = 0
+        count = 0
+
+        for threshold in np.arange(0.5, 1.0, 0.05):
+            pred = tf.cast(output_sigmoid > threshold, tf.float32)
+            intersection = tf.reduce_sum(tf.cast(pred + truth > 1., tf.float32))
+            union = tf.reduce_sum(tf.cast(pred + truth > 0, tf.float32))
+            iou = intersection / union
+            iou_sum += iou
+            count += 1
+
+        return iou_sum / count
