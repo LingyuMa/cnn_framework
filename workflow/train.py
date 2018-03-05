@@ -1,6 +1,7 @@
 import argparse
 import time
 from datetime import datetime
+import json
 import sys
 import os
 import shutil
@@ -29,7 +30,9 @@ def train(params, reset=False):
             # build the network
             cnn = Unet(
                 use_bn=False,
-                l2_reg=params['l2_regularization']
+                l2_reg=params['l2_regularization'],
+                dice_loss_ratio=params['dice_loss_ratio'],
+                weighted_dice_loss_ratio=params['weighted_dice_loss_ratio']
             )
 
         # define input and label tensor
@@ -122,6 +125,10 @@ def train(params, reset=False):
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         os.makedirs(checkpoint_dir, exist_ok=True)
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
+
+        # Save settings.json
+        with open(join(checkpoint_dir, "settings.json"), 'w') as outfile:
+            json.dump(params, outfile)
 
         # Initialize all variables
         sess.run(tf.global_variables_initializer())

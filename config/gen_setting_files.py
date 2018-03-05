@@ -18,20 +18,20 @@ def config(output_folder, random_flag=False, number=1):
         configuration = {}
 
         # pre-processing of input image (offline)
-        configuration['project_type'] = ProjectType.classification
+        configuration['project_type'] = ProjectType.segmentation
 
-        configuration['train_images_path'] = '/home/lingyu/Downloads/Caltech101/images'
-        configuration['valid_images_path'] = '/home/lingyu/Downloads/Caltech101/images'
-        configuration['train_label_path'] = '/home/lingyu/Downloads/Caltech101/labels'
-        configuration['valid_label_path'] = '/home/lingyu/Downloads/Caltech101/labels'
+        configuration['train_images_path'] = '/home/lingyu/Downloads/stage1_train/train/tiles_images'
+        configuration['valid_images_path'] = '/home/lingyu/Downloads/stage1_train/valid/tiles_images'
+        configuration['train_label_path'] = '/home/lingyu/Downloads/stage1_train/train/tiles_labels'
+        configuration['valid_label_path'] = '/home/lingyu/Downloads/stage1_train/valid/tiles_labels'
         configuration['hdf5_path'] = '/home/lingyu/Documents/images/datasets'
 
         configuration['input_image_width'] = 128
         configuration['input_image_height'] = 128
-        configuration['input_image_type'] = ImageType.rgb
-        configuration['target_image_width'] = 128
-        configuration['target_image_height'] = 128
-        configuration['label_size'] = 102
+        configuration['input_image_type'] = ImageType.rgba
+        configuration['target_image_width'] = 90
+        configuration['target_image_height'] = 90
+        configuration['label_size'] = 1
 
         configuration['train_val_separation'] = 0.9
         configuration['normalization_flag'] = Normalization.positive
