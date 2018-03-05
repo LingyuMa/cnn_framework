@@ -1,4 +1,3 @@
-import argparse
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 from os.path import join, abspath
