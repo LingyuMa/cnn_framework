@@ -17,36 +17,36 @@ class LabelType:
 
 
 class Normalization:
-    symmetric = 0
-    positive = 1
-    none = 2
+    none = 0
+    symmetric = 1
+    positive = 2
 
 
 class RotationType:
-    limit_90 = 0
-    limit_180 = 1
-    none = 2
+    none = 0
+    limit_90 = 1
+    limit_180 = 2
 
 
 class FlipType:
-    up_down = 0
-    left_right = 1
-    combined = 2
-    none = 3
+    none = 0
+    up_down = 1
+    left_right = 2
+    combined = 3
 
 
 class ShiftType:
-    width_shift = 0
-    height_shift = 1
-    combined = 2
-    none = 3
+    none = 0
+    width_shift = 1
+    height_shift = 2
+    combined = 3
 
 
 class NoiseType:
-    gaussian_noise = 0
-    poisson_noise = 1
-    speckle_noise = 2
-    none = 3
+    none = 0
+    gaussian_noise = 1
+    poisson_noise = 2
+    speckle_noise = 3
 
 
 class Optimizer:

@@ -41,8 +41,10 @@ def config(output_folder, random_flag=False, number=1):
         configuration['augmentation_flip'] = FlipType.none
         configuration['augmentation_shift'] = ShiftType.none
         configuration['pad_mode'] = 'symmetric'
-        configuration['shift_ratio'] = 0.2
-        configuration['augmentation_noise_model'] = NoiseType.poisson_noise
+        configuration['shift_pixels'] = 5
+        configuration['brightness_ratio'] = 0.2
+        configuration['contrast_ratio'] = 0.2
+        configuration['augmentation_noise_model'] = NoiseType.none
         configuration['noise_std'] = 0.01
         configuration['noise_mean'] = 0
 
@@ -58,15 +60,20 @@ def config(output_folder, random_flag=False, number=1):
         configuration['leaning_rate_decay'] = 0.5
         configuration['decay_iterations'] = 10
         configuration['Optimizer'] = Optimizer.Adam
+
         if random_flag:
             configuration['l2_regularization'] = random.uniform(1e-4, 1e-3)
         else:
             configuration['l2_regularization'] = 0.
+
         if random_flag:
             configuration['batch_size'] = random.randrange(32, 128, 32)
         else:
             configuration['batch_size'] = 32
         configuration['n_epochs'] = 20
+
+        configuration['dice_loss_ratio'] = 0
+        configuration['weighted_dice_loss_ratio'] = 0
 
         configuration['train_log_frequency'] = 10
         configuration['validation_log_frequency'] = 50

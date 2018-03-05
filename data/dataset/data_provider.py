@@ -1,6 +1,7 @@
 import numpy as np
 from random import randint, random
-from skimage.transform import rotate
+from skimage.color import rgb2gray
+from skimage.transform import AffineTransform, warp, rotate
 from skimage.util.noise import random_noise
 
 from data.dataset.dataset_builder import DatasetsCoordinator
@@ -37,8 +38,56 @@ def _augment_rotate(in_images, rotate_type=RotationType.limit_90, padding_mode='
     return in_images, in_labels
 
 
-def _augment_shift(in_images, shift_type = ShiftType.combined, in_labels=None):
+def _shift(image, vector):
+    transform = AffineTransform(translation=vector)
+    shifted = warp(image, transform, mode='constant', preserve_range=True)
+
+    shifted = shifted.astype(image.dtype)
+    return shifted
+
+
+def _augment_shift(in_images, shift_type=ShiftType.combined, shift_pixels=5, in_labels=None):
+    for i in range(len(in_images)):
+        dx = int(round(np.random.uniform(-shift_pixels, shift_pixels)))
+        dy = int(round(np.random.uniform(-shift_pixels, shift_pixels)))
+        shift_arr = np.zeros(2)
+        if shift_type == ShiftType.combined:
+            shift_arr[0] = dx
+            shift_arr[1] = dy
+        elif shift_type == ShiftType.width_shift:
+            shift_arr[0] = dx
+        else:
+            shift_arr[1] = dy
+        in_images[i] = _shift(in_images[i], shift_arr)
+        if in_labels is not None:
+            in_labels[i] = _shift(in_labels[i], shift_arr)
     return in_images, in_labels
+
+
+def clip(img, dtype, maxval):
+    return np.clip(img, 0, maxval).astype(dtype)
+
+
+def _augment_brightness(in_images, limit=0.2, prob=0.5):
+    for i in range(len(in_images)):
+        if random() < prob:
+            alpha = 1.0 + limit*np.random.uniform(-1, 1)
+            maxval = np.max(in_images[i])
+            dtype = in_images[i].dtype
+            in_images[i] = clip(alpha * in_images[i], dtype, maxval)
+    return in_images
+
+
+def _augment_contrast(in_images, limit=0.2, prob=0.5):
+    for i in range(len(in_images)):
+        if random() < prob:
+            alpha = 1.0 + limit*np.random.uniform(-1, 1)
+            gray = rgb2gray(in_images[i])
+            gray = (3.0 * (1.0 - alpha) / gray.size) * np.sum(gray)
+            maxval = np.max(in_images[i])
+            dtype = in_images[i].dtype
+            in_images[i] = clip(alpha * in_images[i] + gray, dtype, maxval)
+    return in_images
 
 
 def _augment_noise(in_images, noise_type=NoiseType.gaussian_noise, std=1.):
@@ -74,6 +123,12 @@ class DataProvider:
 
             images, labels = self.datasets.train_ds.read(idx, batch_size)
 
+            if self.params['brightness_ratio'] != 0:
+                images = _augment_brightness(images, limit=self.params['brightness_ratio'])
+
+            if self.params['contrast_ratio'] != 0:
+                images = _augment_contrast(images, limit=self.params['contrast_ratio'])
+
             if self.params['augmentation_flip'] != FlipType.none:
                 if self.params['project_type'] == ProjectType.classification:
                     images, _ = _augment_flip(images, self.params['augmentation_flip'])
@@ -91,7 +146,8 @@ class DataProvider:
                 if self.params['project_type'] == ProjectType.classification:
                     images, _ = _augment_shift(images, self.params['augmentation_shift'])
                 elif self.params['project_type'] == ProjectType.segmentation:
-                    images, labels = _augment_shift(images, self.params['augmentation_shift'], in_labels=labels)
+                    images, labels = _augment_shift(images, self.params['augmentation_shift'],
+                                                    self.params['shift_pixels'], in_labels=labels)
 
             yield images, labels
 

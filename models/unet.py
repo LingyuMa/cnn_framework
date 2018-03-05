@@ -21,9 +21,11 @@ def calculate_gain(nonlinearity):
 
 
 class Unet:
-    def __init__(self, use_bn=False, l2_reg=0.):
+    def __init__(self, use_bn=False, l2_reg=0., dice_loss_ratio=0., weighted_dice_loss_ratio=0.):
         self.l2_reg = l2_reg
         self.use_bn = use_bn
+        self.dice_loss_ratio = float(dice_loss_ratio)
+        self.weighted_dice_loss_ratio = float(weighted_dice_loss_ratio)
 
     def inference(self, input_tensor_batch, is_training=True, reuse=True):
         relu_initializer = tf.orthogonal_initializer(gain=calculate_gain('relu'))
@@ -152,7 +154,20 @@ class Unet:
         cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(mask, tf.float32), logits=logits)
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
         reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        total_loss = tf.add_n([cross_entropy_mean] + reg_loss)
+        dice_loss_val = 0
+        weighted_dice_loss_val = 0
+        if self.dice_loss_ratio > 0:
+            dice_loss_val = tf.reduce_mean(self.dice_loss_ratio *
+                                           dice_loss(y_pred=logits, y_true=tf.cast(mask, tf.float32)))
+            tf.summary.scalar('dice_loss', dice_loss_val)
+        if self.weighted_dice_loss_ratio > 0:
+
+            weighted_dice_loss_val = tf.reduce_mean(self.weighted_dice_loss_ratio *
+                                                    weighted_dice_loss(y_pred=logits, y_true=tf.cast(mask, tf.float32)))
+            tf.summary.scalar('weighted_dice_loss', weighted_dice_loss_val)
+
+        total_loss = tf.add_n([cross_entropy_mean] + [dice_loss_val] + [weighted_dice_loss_val] + reg_loss)
+
         tf.summary.scalar('total_loss', total_loss)
         tf.summary.scalar('fn_loss', cross_entropy_mean)
         return total_loss
