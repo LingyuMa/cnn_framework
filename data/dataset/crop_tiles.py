@@ -18,6 +18,8 @@ def crop(image, tile_size, ratio, in_padding):
     h_range = np.arange(0, h, inc_h)
     for x in w_range:
         for y in h_range:
+            if x + tile_size > w or y + tile_size > h:
+                continue
             rval.append(get_region(image, x - in_padding, x + tile_size + in_padding,
                                    y - in_padding, y + tile_size + in_padding))
     return rval

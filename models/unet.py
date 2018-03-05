@@ -154,8 +154,8 @@ class Unet:
         cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.cast(mask, tf.float32), logits=logits)
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
         reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        dice_loss_val = 0
-        weighted_dice_loss_val = 0
+        dice_loss_val = 0.
+        weighted_dice_loss_val = 0.
         if self.dice_loss_ratio > 0:
             dice_loss_val = tf.reduce_mean(self.dice_loss_ratio *
                                            dice_loss(y_pred=logits, y_true=tf.cast(mask, tf.float32)))
