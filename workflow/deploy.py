@@ -32,6 +32,7 @@ def normalize_img(img):
 def prepare_batches(tiles, batch_size):
     n_batches = int(np.ceil(len(tiles)/batch_size))
     residue = len(tiles) % batch_size
+    print(residue)
     batches = []
     tiles = np.array(tiles)
     for i in range(n_batches):
@@ -41,7 +42,8 @@ def prepare_batches(tiles, batch_size):
             batches.append(tiles[start:end])
         else:
             temp = np.zeros((batch_size, *tiles[0].shape))
-            temp[:residue] = tiles[start:end]
+            if residue != 0:
+                temp[:residue] = tiles[start:end]
             batches.append(temp)
     return batches
 
