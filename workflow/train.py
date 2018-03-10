@@ -124,7 +124,7 @@ def train(params, reset=False):
         checkpoint_dir = join(params['checkpoint_path'], cur_datetime)
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         os.makedirs(checkpoint_dir, exist_ok=True)
-        saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
 
         # Save settings.json
         with open(join(checkpoint_dir, "settings.json"), 'w') as outfile:
@@ -176,9 +176,9 @@ def train(params, reset=False):
                         dev_step(x_valid, y_valid, writer=dev_summary_writer)
                         print("")
                         break
-                if current_step % params['checkpoint_save_frequency'] == 0:
-                    path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                    print("Saved model checkpoint to {}\n".format(path))
+            if num % params['checkpoint_save_frequency'] == 0 or num == params['n_epochs'] - 1:
+                path = saver.save(sess, checkpoint_prefix, global_step=num)
+                print("Saved model checkpoint to {}\n".format(path))
 
 
 if __name__ == "__main__":
