@@ -23,12 +23,6 @@ def get_images_list(image_dir):
 
 
 def _preprocessor(in_image, width, height, depth, norm_flag=Normalization.positive, hist_eq=False):
-    # convert gray2rgb or rgb2gray
-    if depth >= 3 and in_image.ndim == 2:
-        in_image = color.gray2rgb(in_image)
-    elif depth == 1 and in_image.dim == 3:
-        in_image = color.rgb2gray(in_image)
-
     # get the range of the pixel value
     if in_image.dtype == 'uint8':
         max_val = float(2**8 - 1)
@@ -36,9 +30,22 @@ def _preprocessor(in_image, width, height, depth, norm_flag=Normalization.positi
         max_val = float(2**16 - 1)
     else:
         raise(NotImplementedError('unknown image bit'))
+    # convert gray2rgb or rgb2gray
+    if depth >= 3 and in_image.ndim == 2:
+        in_image = color.gray2rgb(in_image)
+    elif depth == 1 and in_image.ndim == 3:
+        if max_val == float(2**8 - 1):
+            in_image = (color.rgb2gray(in_image) * max_val).astype(np.uint8)
+        elif max_val == float(2**16 - 1):
+            in_image = (color.rgb2gray(in_image) * max_val).astype(np.uint16)
+        else:
+            raise NotImplementedError("unknow image bit")
 
     if depth == 4 and in_image.shape[-1] == 3:
         in_image = np.concatenate([in_image, max_val * np.ones((*in_image.shape[:-1], 1))], axis=2)
+
+    if depth == 3 and in_image.shape[-1] == 4:
+        in_image = in_image[:, :, :3]
 
     # resize the image first
     if in_image.shape[0] != height or in_image.shape[1] != width:
@@ -53,6 +60,11 @@ def _preprocessor(in_image, width, height, depth, norm_flag=Normalization.positi
         in_image = in_image / max_val
     elif norm_flag == Normalization.symmetric:
         in_image = in_image / (max_val/2.) - 1.
+
+    # expand grey image with one dim
+    if depth == 1:
+        in_image = np.expand_dims(in_image, axis=2)
+
 
     return in_image.astype(np.float32)
 

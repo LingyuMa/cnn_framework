@@ -16,6 +16,8 @@ from skimage.filters import threshold_otsu
 from data.dataset.crop_tiles import crop
 from data.dataset.preprocessing import get_images_list
 
+from typedef import *
+
 
 def iou(input_map, target_map, thresh=0.5):
     pred = (input_map > thresh).astype(np.float32)
@@ -76,11 +78,13 @@ def test(base_dir, label_dir, label_prefix, image_list, ckpt_path, params, outpu
             saver.restore(sess, tf.train.latest_checkpoint(ckpt_path))
             for idx, img_name in enumerate(image_list):
                 start_time = time.time()
-                img = imread(join(base_dir, img_name))
-                if img.ndim == 2:
-                    img = color.gray2rgb(img)
-                if img.shape[-1] == 3:
-                    img = np.concatenate([img, 255 * np.ones((*img.shape[:-1], 1))], axis=2)
+                if params['input_image_type'] == ImageType.rgb:
+                    img = imread(join(base_dir, img_name))[:, :, :3]
+                elif params['input_image_type'] == ImageType.gray:
+                    img = imread(join(base_dir, img_name))[:, :, 0]
+                    img = np.expand_dims(img, axis=2)
+                # if img.shape[-1] == 3:
+                #     img = np.concatenate([img, 255 * np.ones((*img.shape[:-1], 1))], axis=2)
                 img = normalize_img(img)
 
                 image_batches = prepare_batches(crop(img, tile_size, 1, in_padding), batch_size)
